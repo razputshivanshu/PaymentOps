@@ -361,14 +361,20 @@ export default function App() {
     })
 
     try {
+      const workerMetricsBase =
+        import.meta.env.VITE_WORKER_METRICS_URL || '/worker-metrics'
+      const workerMetricsUrl =
+        workerMetricsBase.startsWith('/') ||
+        workerMetricsBase.endsWith('/metrics')
+          ? workerMetricsBase
+          : `${workerMetricsBase.replace(/\/+$/, '')}/metrics`
+
       const [apiMetrics, workerMetrics] = await Promise.allSettled([
         fetch(`${apiBase}/metrics`).then((r) => {
           if (!r.ok) throw Error()
           return r.text()
         }),
-        fetch(
-          import.meta.env.VITE_WORKER_METRICS_URL || '/worker-metrics',
-        ).then((r) => {
+        fetch(workerMetricsUrl).then((r) => {
           if (!r.ok) throw Error()
           return r.text()
         }),
@@ -1896,13 +1902,8 @@ export default function App() {
                   className="notice"
                   style={{ marginTop: 14 }}
                 >
-                  Go worker metrics endpoint unavailable
-                  at{' '}
-                  {import.meta.env
-                    .VITE_WORKER_METRICS_URL ||
-                    'http://localhost:9090/metrics'}
-                  . Worker-only counters show as
-                  unavailable.
+                  Go worker metrics endpoint unavailable. Worker-only
+                  counters show as unavailable.
                 </div>
               )}
             </>

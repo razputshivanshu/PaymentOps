@@ -38,6 +38,7 @@ Use [Demo walkthrough](docs/demo.md) to show:
 ## Documentation
 
 - [Local setup](docs/setup.md) — start the services and dashboard
+- [Render deployment](docs/setup.md#deploy-to-render) — deploy the complete demo with the included Blueprint
 - [Demo walkthrough](docs/demo.md) — run and explain the scenarios
 - [Architecture](docs/architecture.md) — components, API, and data flow
 - [Reliability notes](docs/reliability.md) — actual guarantees and limits

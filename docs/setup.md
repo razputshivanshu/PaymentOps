@@ -81,6 +81,26 @@ The dashboard header reports API, PostgreSQL, Redis, and worker metrics endpoint
 
 The dashboard refreshes data every four seconds. The failure-and-retry scenario takes about 10 seconds for the retry to become due, plus up to one refresh interval.
 
+## Deploy to Render
+
+The repository includes a root-level [`render.yaml`](../render.yaml) Blueprint for the dashboard, FastAPI, Go worker, PostgreSQL, and Redis-compatible Key Value. All server-side services use the Singapore region. The Blueprint wires the internal database and Redis URLs into both backend services, builds the frontend with the API and worker URLs, and initializes database tables before starting FastAPI.
+
+1. Push the branch containing `render.yaml` to GitHub.
+2. In Render, choose **New → Blueprint**, connect `razputshivanshu/PaymentOps`, and select the branch containing the Blueprint.
+3. Review the five resources and their plans, then apply the Blueprint. Render Blueprints create and configure resources from a repository YAML file ([Blueprint guide](https://render.com/docs/infrastructure-as-code)).
+4. Wait for the API, worker, database, Key Value, and static site to finish provisioning. Open the dashboard URL shown in Render.
+5. Check the dashboard health indicators. The API health check is `/health/db`; worker reachability is checked at `/metrics`.
+
+The frontend receives `VITE_API_BASE_URL` and the worker service URL at build time. It requests the worker's `/metrics` endpoint directly, so the Go metrics handler allows cross-origin reads. The API's Blueprint configuration allows cross-origin requests for this demo.
+
+### Render free-plan behavior
+
+- Free web services spin down after 15 minutes without inbound traffic and can take about a minute to wake up. While the dashboard is open, its four-second polling sends requests to the API and worker metrics endpoint; a sleeping service can make the first refresh slow. This is a demo workaround, not a production worker setup. [Render free instance limits](https://render.com/docs/free)
+- Free Render Postgres is limited to 1 GB and expires 30 days after creation. Free Key Value has no data persistence and can lose queue contents after a restart. Keep this deployment temporary and do not treat Redis as durable storage. [Free plan limits](https://render.com/docs/free), [Key Value persistence](https://render.com/docs/key-value)
+- The API has no authentication or webhook signature verification, and its CORS policy is open in the Blueprint. Deploy only as a public demonstration; do not send real payments or sensitive data.
+
+Render requires a web service to bind its HTTP listener to the supplied `PORT` on `0.0.0.0`. The API start command and worker metrics listener are configured for this. [Render web services](https://render.com/docs/web-services#port-binding)
+
 ## Troubleshooting
 
 - **API cannot connect to PostgreSQL:** Check that `docker compose ps` shows PostgreSQL running and that port `5433` is available.

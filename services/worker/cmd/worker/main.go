@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"aura-payment-orchestrator/worker/internal/database"
@@ -18,7 +19,6 @@ import (
 )
 
 const (
-	redisAddr     = "localhost:6379"
 	streamName    = "payment_events"
 	consumerGroup = "payment_workers"
 	consumerName  = "worker-1"
@@ -40,11 +40,26 @@ func main() {
 	metrics.Init()
 
 	go func() {
-		http.Handle("/metrics", promhttp.Handler())
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "9090"
+		}
 
-		log.Println("Metrics server listening on :9090")
+		mux := http.NewServeMux()
+		mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			promhttp.Handler().ServeHTTP(w, r)
+		})
 
-		if err := http.ListenAndServe(":9090", nil); err != nil {
+		log.Printf("Metrics server listening on :%s", port)
+
+		if err := http.ListenAndServe(":"+port, mux); err != nil {
 			log.Printf("Metrics server stopped: %v", err)
 		}
 	}()
@@ -55,9 +70,15 @@ func main() {
 	// Redis
 	// ---------------------------------------------------------
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr: redisAddr,
-	})
+	redisURL := os.Getenv("REDIS_URL")
+	if redisURL == "" {
+		redisURL = "redis://localhost:6379"
+	}
+	redisOptions, err := redis.ParseURL(redisURL)
+	if err != nil {
+		log.Fatalf("invalid redis URL: %v", err)
+	}
+	rdb := redis.NewClient(redisOptions)
 
 	defer rdb.Close()
 

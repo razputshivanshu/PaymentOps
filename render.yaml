@@ -1,0 +1,84 @@
+databases:
+  - name: paymentops-db
+    databaseName: aura_payments
+    user: aura
+    plan: free
+    region: singapore
+    postgresMajorVersion: "16"
+    ipAllowList: []
+
+services:
+  - type: keyvalue
+    name: paymentops-redis
+    plan: free
+    region: singapore
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+    persistenceMode: "off"
+
+  - type: web
+    name: paymentops-api
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: services/api
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.init_db && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health/db
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: paymentops-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: paymentops-redis
+          type: keyvalue
+          property: connectionString
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+  - type: web
+    name: paymentops-worker
+    runtime: go
+    plan: free
+    region: singapore
+    rootDir: services/worker
+    buildCommand: go build -o worker ./cmd/worker
+    startCommand: ./worker
+    healthCheckPath: /metrics
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: paymentops-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: paymentops-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: web
+    name: paymentops-dashboard
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    autoDeployTrigger: commit
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          name: paymentops-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_WORKER_METRICS_URL
+        fromService:
+          name: paymentops-worker
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_GITHUB_URL
+        value: https://github.com/razputshivanshu/PaymentOps

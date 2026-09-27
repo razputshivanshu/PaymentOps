@@ -7,6 +7,7 @@ from app.api.routes.dashboard import router as dashboard_router
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+import os
 
 app = FastAPI(
     title="Aura Payment Orchestrator",
@@ -17,9 +18,13 @@ app = FastAPI(
 app.include_router(mandate_router)
 app.include_router(payment_router)
 app.include_router(dashboard_router)
+cors_origins = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173",
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[origin.strip() for origin in cors_origins.split(",") if origin.strip()],
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],

@@ -24,6 +24,8 @@ Redis Streams ──► Go worker
 - **Go worker:** Reads stream messages, updates PostgreSQL in transactions, schedules failed-payment retries, and recovers idle pending messages.
 - **Metrics:** FastAPI serves `/metrics`; the worker serves `/metrics` on port `9090`.
 
+For Render, API and worker connection URLs come from `DATABASE_URL` and `REDIS_URL`. The worker metrics listener uses Render's `PORT` when present and defaults to `9090` locally. `render.yaml` defines the hosted services and the static dashboard's build-time API and worker URLs.
+
 The “payment provider” is simulated in the worker. A successful webhook produces a successful attempt. A failed webhook produces a failed attempt; the later retry is assumed to succeed. No external payment provider is called.
 
 ## Successful payment flow
