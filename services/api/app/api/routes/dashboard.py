@@ -1,11 +1,16 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy import desc, select
+import hmac
+import os
+
+from fastapi import APIRouter, Depends, Header, HTTPException
+from sqlalchemy import desc, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import AsyncSessionLocal
+from app.database import AsyncSessionLocal, engine
 from app.models import LedgerEntry, Mandate, PaymentAttempt, PaymentEvent
+from app.redis import redis_client
 
 router = APIRouter(tags=["Dashboard"])
+PAYMENT_STREAM = "payment_events"
 
 
 async def get_db():
@@ -64,3 +69,25 @@ async def payment_detail(payment_id: str, db: AsyncSession = Depends(get_db)):
     events = await db.execute(select(PaymentEvent).where(PaymentEvent.payment_id == payment_id).order_by(PaymentEvent.received_at))
     ledger = await db.execute(select(LedgerEntry).where(LedgerEntry.payment_id == payment_id))
     return {"payment_id": payment_id, "attempts": [row(item) for item in attempts.scalars()], "events": [row(item) for item in events.scalars()], "ledger": [row(item) for item in ledger.scalars()]}
+
+
+@router.post("/admin/reset")
+async def reset_demo_data(
+    reset_token: str | None = Header(default=None, alias="X-Reset-Token"),
+):
+    expected_token = os.getenv("RESET_TOKEN")
+    if not expected_token:
+        raise HTTPException(status_code=503, detail="Demo reset is not configured")
+    if not reset_token or not hmac.compare_digest(reset_token, expected_token):
+        raise HTTPException(status_code=403, detail="Invalid reset token")
+
+    async with engine.begin() as connection:
+        await connection.execute(
+            text(
+                "TRUNCATE TABLE ledger_entries, payment_attempts, "
+                "payment_events, mandates RESTART IDENTITY CASCADE"
+            )
+        )
+
+    await redis_client.xtrim(PAYMENT_STREAM, maxlen=0, approximate=False)
+    return {"status": "ok", "message": "Demo data and queued events cleared"}

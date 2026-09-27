@@ -81,6 +81,8 @@ The dashboard header reports API, PostgreSQL, Redis, and worker metrics endpoint
 
 The dashboard refreshes data every four seconds. The failure-and-retry scenario takes about 10 seconds for the retry to become due, plus up to one refresh interval.
 
+The **Overview** page includes a **Reset data** control. It clears demo records and queued Redis stream events while keeping the Render resources. On Render, open `paymentops-api` → **Environment** and copy the `RESET_TOKEN` value when prompted. The control also requires typing `RESET` as confirmation.
+
 ## Deploy to Render
 
 The repository includes a root-level [`render.yaml`](../render.yaml) Blueprint for the dashboard, FastAPI, Go worker, PostgreSQL, and Redis-compatible Key Value. All server-side services use the Singapore region. The Blueprint wires the internal database and Redis URLs into both backend services, builds the frontend with the API and worker URLs, and initializes database tables before starting FastAPI.
@@ -97,7 +99,7 @@ The frontend receives `VITE_API_BASE_URL` and the worker service URL at build ti
 
 - Free web services spin down after 15 minutes without inbound traffic and can take about a minute to wake up. While the dashboard is open, its four-second polling sends requests to the API and worker metrics endpoint; a sleeping service can make the first refresh slow. This is a demo workaround, not a production worker setup. [Render free instance limits](https://render.com/docs/free)
 - Free Render Postgres is limited to 1 GB and expires 30 days after creation. Free Key Value has no data persistence and can lose queue contents after a restart. Keep this deployment temporary and do not treat Redis as durable storage. [Free plan limits](https://render.com/docs/free), [Key Value persistence](https://render.com/docs/key-value)
-- The API has no authentication or webhook signature verification, and its CORS policy is open in the Blueprint. Deploy only as a public demonstration; do not send real payments or sensitive data.
+- The payment and dashboard APIs have no authentication or webhook signature verification; only the reset endpoint requires the generated `RESET_TOKEN`. The Blueprint's CORS policy is open. Deploy only as a public demonstration; do not send real payments or sensitive data.
 
 Render requires a web service to bind its HTTP listener to the supplied `PORT` on `0.0.0.0`. The API start command and worker metrics listener are configured for this. [Render web services](https://render.com/docs/web-services#port-binding)
 

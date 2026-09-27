@@ -33,6 +33,7 @@ import {
   Server,
   Shield,
   ShieldCheck,
+  Trash2,
   WalletCards,
   X,
 } from 'lucide-react'
@@ -304,6 +305,10 @@ export default function App() {
   } | null>(null)
 
   const [mandateModal, setMandateModal] = useState(false)
+  const [resetModal, setResetModal] = useState(false)
+  const [resetToken, setResetToken] = useState('')
+  const [resetConfirmation, setResetConfirmation] = useState('')
+  const [resetting, setResetting] = useState(false)
   const [selected, setSelected] = useState<AnyRow | null>(null)
   const [detail, setDetail] = useState<AnyRow | null>(null)
   const [eventFilter, setEventFilter] = useState('All')
@@ -469,6 +474,35 @@ export default function App() {
     } catch (e: any) {
       notify(e.message, true)
     }
+  }
+
+  const resetDemoData = async (ev: React.FormEvent<HTMLFormElement>) => {
+    ev.preventDefault()
+    setResetting(true)
+    try {
+      await api('/admin/reset', {
+        method: 'POST',
+        headers: { 'X-Reset-Token': resetToken },
+      })
+      setResetModal(false)
+      setResetToken('')
+      setResetConfirmation('')
+      setSelected(null)
+      setDetail(null)
+      await refresh()
+      notify('Demo data and queued events cleared')
+    } catch (e: any) {
+      notify(e.message || 'Could not reset demo data', true)
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  const closeResetModal = () => {
+    if (resetting) return
+    setResetModal(false)
+    setResetToken('')
+    setResetConfirmation('')
   }
 
   const runScenario = async (
@@ -1121,6 +1155,23 @@ export default function App() {
                   </div>
                 </Panel>
               </div>
+
+              <Panel
+                title="Reset demo data"
+                caption="Clear saved payment records and queued events before another walkthrough."
+                action={
+                  <button
+                    className="btn"
+                    onClick={() => setResetModal(true)}
+                  >
+                    <Trash2 size={14} /> Reset data
+                  </button>
+                }
+              >
+                <div className="notice">
+                  This permanently removes mandates, payment attempts, webhook events, ledger entries, and pending Redis stream events. It does not delete the Render database or reset process metrics.
+                </div>
+              </Panel>
             </>
           ) : page === 'Mandates' ? (
             <>
@@ -2001,6 +2052,78 @@ export default function App() {
 
                   <button className="btn primary">
                     <Plus size={14} /> Create mandate
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {resetModal && (
+            <div
+              className="modal-backdrop"
+              onClick={(e) =>
+                e.target === e.currentTarget &&
+                closeResetModal()
+              }
+            >
+              <form className="modal" onSubmit={resetDemoData}>
+                <div className="modal-head">
+                  <div>
+                    <p className="eyebrow">DESTRUCTIVE ACTION</p>
+                    <h2 className="panel-title">Reset demo data?</h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="close"
+                    disabled={resetting}
+                    aria-label="Close reset dialog"
+                    onClick={closeResetModal}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="notice" style={{ marginTop: 16 }}>
+                  This clears all saved demo records and queued events. To authorize it, copy <code>RESET_TOKEN</code> from Render → <code>paymentops-api</code> → Environment.
+                </div>
+
+                <div className="field">
+                  <label htmlFor="reset-token">Reset token</label>
+                  <input
+                    id="reset-token"
+                    type="password"
+                    autoComplete="off"
+                    required
+                    value={resetToken}
+                    onChange={(e) => setResetToken(e.target.value)}
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="reset-confirmation">Type RESET to confirm</label>
+                  <input
+                    id="reset-confirmation"
+                    autoComplete="off"
+                    required
+                    value={resetConfirmation}
+                    onChange={(e) => setResetConfirmation(e.target.value)}
+                  />
+                </div>
+
+                <div className="actions" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={resetting}
+                    onClick={closeResetModal}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn primary"
+                    disabled={resetting || resetConfirmation !== 'RESET'}
+                  >
+                    <Trash2 size={14} /> {resetting ? 'Resetting…' : 'Clear demo data'}
                   </button>
                 </div>
               </form>

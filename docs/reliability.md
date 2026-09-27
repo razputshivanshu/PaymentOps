@@ -40,7 +40,7 @@ The worker stores a failed attempt and its retry time in PostgreSQL. The retry d
 - Webhooks are not authenticated or signature-verified.
 - The API persists an event and then publishes it to Redis; there is no transactional outbox or dashboard action to republish an event if Redis publishing fails.
 - Render's free Key Value has no persistence, so a service restart can discard queued stream messages even though PostgreSQL records remain. The free deployment is for a short demo, not durable job processing.
-- The Render Blueprint opens CORS for the public demo and does not add API authentication or webhook signature verification. CORS does not protect the API from non-browser clients.
+- The Render Blueprint opens CORS for the public demo and does not add payment API authentication or webhook signature verification. The reset endpoint separately requires the generated `RESET_TOKEN`. CORS does not protect the API from non-browser clients.
 - Free Render web services can sleep after inactivity. The dashboard's polling requests can keep the API and metrics web service active during a presentation, but this is not a reliable always-on worker design.
 - The dashboard can show health and worker metrics endpoint reachability, but cannot confirm a specific Redis ACK or display pending/recovered-message counts.
 - The UI has no crash-injection control. Stopping the worker before it consumes an event demonstrates queued delivery after restart; it does not by itself demonstrate `XAUTOCLAIM` of an already pending message.
