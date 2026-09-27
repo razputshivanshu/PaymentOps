@@ -117,7 +117,7 @@ export default function App() {
 }
 function CopyIcon({ size = 14 }: { size?: number }) { return <Shield size={size} /> }
 function PaymentOpsPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
-  const githubUrl = import.meta.env.VITE_GITHUB_URL || 'https://github.com/search?q=aura-payment-orchestrator&type=repositories'
+  const githubUrl = import.meta.env.VITE_GITHUB_URL || 'https://github.com/razputshivanshu/PaymentOps'
   const technologies = ['React', 'TypeScript', 'Vite', 'Tailwind CSS', 'FastAPI', 'Python', 'PostgreSQL', 'Redis Streams', 'Go', 'Prometheus', 'Docker']
   return <>
     <Head eyebrow="BUILT IN 2 DAYS · INDEPENDENT ENGINEERING DEMO" title="Why I chose to build this" subtitle="How a recurring-payment reliability question became a working engineering demo." right={<a className="btn" href={githubUrl} target="_blank" rel="noreferrer"><Github size={14} /> GitHub <ArrowUpRight size={13} /></a>} />

@@ -1,5 +1,7 @@
 # Local setup
 
+**Source code:** [GitHub repository](https://github.com/razputshivanshu/PaymentOps)
+
 This guide starts the complete demo: PostgreSQL and Redis, the FastAPI service, the Go worker, and the dashboard.
 
 ## Requirements

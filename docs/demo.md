@@ -1,5 +1,7 @@
 # Demo walkthrough
 
+**Source code:** [GitHub repository](https://github.com/razputshivanshu/PaymentOps)
+
 Use this guide after starting all services in [Local setup](setup.md). The dashboard is intended to make the behavior visible without relying on terminal logs.
 
 ## Before presenting

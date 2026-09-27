@@ -1,5 +1,7 @@
 # Reliability notes
 
+**Source code:** [GitHub repository](https://github.com/razputshivanshu/PaymentOps)
+
 This page summarizes what the current demo implements and what it does not prove. It is an independent engineering demo, not a production payment system.
 
 ## Guarantees demonstrated by the code

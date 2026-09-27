@@ -1,5 +1,7 @@
 # Architecture
 
+**Source code:** [GitHub repository](https://github.com/razputshivanshu/PaymentOps)
+
 This document describes the code in this repository. It is an independent engineering demo inspired by recurring-payment reliability challenges, not Aura Gold's production architecture.
 
 ## Services

@@ -1,5 +1,7 @@
 # Recurring Payment Reliability Demo
 
+**Code repository:** [github.com/razputshivanshu/PaymentOps](https://github.com/razputshivanshu/PaymentOps)
+
 An independent engineering demo of webhook idempotency, asynchronous payment processing, retry handling, and ledger safety. It is inspired by publicly documented recurring-payment reliability challenges. **It is not Aura Gold's production system or architecture.**
 
 ## What the demo runs
