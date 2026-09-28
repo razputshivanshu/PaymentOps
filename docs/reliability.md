@@ -8,7 +8,7 @@ This page summarizes what the current demo implements and what it does not prove
 
 ### Repeated webhook delivery
 
-FastAPI checks the unique `event_id` before inserting a payment event. A repeated event ID returns a `duplicate` response and does not create another event row. The API exposes in-memory counters for total, accepted, and duplicate webhook requests.
+FastAPI checks the unique `event_id` before inserting a payment event. Every inbound request is also saved in `webhook_deliveries` as `ACCEPTED` or `DUPLICATE`, so repeated deliveries can be inspected after refresh without creating another payment event or ledger effect. The API also exposes in-memory counters for total, accepted, and duplicate webhook requests.
 
 ### Repeated financial processing
 

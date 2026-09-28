@@ -19,6 +19,7 @@ Redis Streams ──► Go worker
 
 - **React dashboard:** Reads data from FastAPI and submits mandate and webhook requests. It never connects to PostgreSQL or Redis directly.
 - **FastAPI:** Creates mandates, accepts payment webhooks, stores new events, publishes them to Redis, and serves dashboard read endpoints.
+- **Webhook delivery history:** Stores every inbound request as `ACCEPTED` or `DUPLICATE`. The unique payment event remains a separate record.
 - **PostgreSQL:** Stores mandates, payment events, attempts, and ledger entries. The ledger is the persisted record of successful financial effects.
 - **Redis Streams:** Delivers accepted webhook events to a consumer group for asynchronous processing.
 - **Go worker:** Reads stream messages, updates PostgreSQL in transactions, schedules failed-payment retries, and recovers idle pending messages.
@@ -31,7 +32,7 @@ The “payment provider” is simulated in the worker. A successful webhook prod
 ## Successful payment flow
 
 1. The dashboard submits a webhook to `POST /webhooks/payment`.
-2. FastAPI checks `event_id`. If it is new, it writes a `payment_events` row and publishes the event to the `payment_events` Redis stream.
+2. FastAPI records each delivery. For a new `event_id`, it writes a `payment_events` row and publishes the event to the `payment_events` Redis stream. Repeated IDs are logged as duplicate deliveries and are not published again.
 3. The Go worker reads the message and starts a PostgreSQL transaction.
 4. The worker locks the mandate and checks whether the payment already has a `GOLD_CREDIT` ledger entry.
 5. For a new successful payment, it writes a successful attempt, a ledger entry, and the event's `PROCESSED` status in one transaction.
@@ -47,7 +48,7 @@ For a webhook with `provider_status: FAILED`, the worker stores a failed attempt
 
 The demo uses two separate keys:
 
-- **Webhook delivery:** `payment_events.event_id` is unique. Repeating the same event ID returns `duplicate` from FastAPI and does not insert another event row.
+- **Webhook delivery:** `payment_events.event_id` is unique. Repeating the same event ID returns `duplicate`, adds a `DUPLICATE` row to `webhook_deliveries`, and does not insert another payment event or publish another worker message.
 - **Financial effect:** The worker checks for a ledger entry with the same `payment_id` and `GOLD_CREDIT` type. The ledger table also has a unique constraint on that pair. This protects against a second event for a payment that already succeeded.
 
 An event status describes webhook processing, not the payment outcome. A failed payment webhook can have status `PROCESSED` while its attempt is `FAILED` and waiting for retry.
@@ -62,6 +63,7 @@ An event status describes webhook processing, not the payment outcome. A failed 
 | `GET /payments` | List payment summaries |
 | `GET /payments/{payment_id}` | Read attempts, events, and ledger rows for a payment |
 | `GET /events` | List recent webhook events |
+| `GET /deliveries` | List each accepted and duplicate webhook delivery |
 | `GET /attempts` | List recent payment attempts |
 | `GET /ledger` | List recent ledger entries |
 | `GET /health`, `/health/db`, `/health/redis` | Check API, PostgreSQL, and Redis separately |
@@ -72,7 +74,7 @@ Worker metrics are served separately at `http://localhost:9090/metrics`.
 ## Data shown in the dashboard
 
 - **Mandates:** ID, amount, currency, frequency, status, and dates.
-- **Events:** event ID, payment ID, provider status, processing status, and received time.
+- **Events:** unique event ID, payment ID, provider status, processing status, and received time. The separate delivery history shows each inbound request and whether it was accepted or duplicate.
 - **Attempts:** attempt number, status, provider reference, failure details, and retry time.
 - **Ledger:** payment ID, entry type, quantity, asset, and creation time.
 - **Payment detail:** associated events, attempts, and ledger entries.

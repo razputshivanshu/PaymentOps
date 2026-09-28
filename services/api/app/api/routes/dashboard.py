@@ -6,7 +6,13 @@ from sqlalchemy import desc, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import AsyncSessionLocal, engine
-from app.models import LedgerEntry, Mandate, PaymentAttempt, PaymentEvent
+from app.models import (
+    LedgerEntry,
+    Mandate,
+    PaymentAttempt,
+    PaymentEvent,
+    WebhookDelivery,
+)
 from app.redis import redis_client
 
 router = APIRouter(tags=["Dashboard"])
@@ -31,6 +37,16 @@ async def list_mandates(db: AsyncSession = Depends(get_db)):
 @router.get("/events")
 async def list_events(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PaymentEvent).order_by(desc(PaymentEvent.received_at)).limit(250))
+    return [row(item) for item in result.scalars()]
+
+
+@router.get("/deliveries")
+async def list_webhook_deliveries(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(WebhookDelivery)
+        .order_by(desc(WebhookDelivery.received_at))
+        .limit(250)
+    )
     return [row(item) for item in result.scalars()]
 
 
@@ -85,9 +101,13 @@ async def reset_demo_data(
         await connection.execute(
             text(
                 "TRUNCATE TABLE ledger_entries, payment_attempts, "
-                "payment_events, mandates RESTART IDENTITY CASCADE"
+                "payment_events, webhook_deliveries, mandates "
+                "RESTART IDENTITY CASCADE"
             )
         )
 
     await redis_client.xtrim(PAYMENT_STREAM, maxlen=0, approximate=False)
-    return {"status": "ok", "message": "Demo data and queued events cleared"}
+    return {
+        "status": "ok",
+        "message": "Demo data, webhook deliveries, and queued events cleared",
+    }

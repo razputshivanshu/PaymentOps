@@ -9,7 +9,7 @@ from app.metrics import (
     payment_webhooks_duplicates_total,
     payment_webhooks_accepted_total,
 )
-from app.models import PaymentEvent
+from app.models import PaymentEvent, WebhookDelivery
 from app.schemas.payment import PaymentWebhookRequest
 from app.stream import publish_payment_event
 
@@ -44,6 +44,14 @@ async def payment_webhook(
 
     # Duplicate webhook event.
     if existing_event:
+        db.add(
+            WebhookDelivery(
+                event_id=request.event_id,
+                payment_id=request.payment_id,
+                status="DUPLICATE",
+            )
+        )
+        await db.commit()
         payment_webhooks_duplicates_total.inc()
 
         return {
@@ -61,8 +69,14 @@ async def payment_webhook(
         provider_status=request.provider_status,
         payload=request.payload,
     )
+    delivery = WebhookDelivery(
+        event_id=request.event_id,
+        payment_id=request.payment_id,
+        status="ACCEPTED",
+    )
 
     db.add(event)
+    db.add(delivery)
 
     try:
         await db.commit()
@@ -71,6 +85,23 @@ async def payment_webhook(
         # Handles a race where two identical events arrive
         # at almost exactly the same time.
         await db.rollback()
+
+        existing_event = await db.execute(
+            select(PaymentEvent).where(
+                PaymentEvent.event_id == request.event_id
+            )
+        )
+        if existing_event.scalar_one_or_none() is None:
+            raise
+
+        db.add(
+            WebhookDelivery(
+                event_id=request.event_id,
+                payment_id=request.payment_id,
+                status="DUPLICATE",
+            )
+        )
+        await db.commit()
 
         payment_webhooks_duplicates_total.inc()
 

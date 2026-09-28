@@ -4,6 +4,7 @@ from app.models.payment import (
     PaymentAttempt,
     PaymentEvent,
     LedgerEntry,
+    WebhookDelivery,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "PaymentAttempt",
     "PaymentEvent",
     "LedgerEntry",
+    "WebhookDelivery",
 ]

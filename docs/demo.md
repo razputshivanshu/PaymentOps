@@ -33,7 +33,7 @@ On **Payments**, click **Send duplicate webhook**.
 
 The dashboard sends the same webhook payload twice, including the same `event_id`. FastAPI should return `accepted` for the first request and `duplicate` for the second.
 
-Show the two responses in the scenario panel. After the worker finishes, expect one persisted event, one payment attempt, and one ledger entry. The duplicate delivery increments the API's duplicate counter but does not create a second event row.
+Show the two responses in the scenario panel. Then open **Events → Webhook delivery history** to show one `ACCEPTED` and one `DUPLICATE` delivery with the same event ID. The event log still has one persisted event, and the payment has one attempt and one ledger entry. The duplicate delivery increments the API's duplicate counter but creates no extra financial effect.
 
 **Explain:** Webhook idempotency uses `event_id`. Payment-level idempotency is a separate guard that prevents a second ledger effect if another event refers to a payment that already has a ledger entry.
 

@@ -225,6 +225,24 @@ class PaymentEvent(Base):
     )
 
 
+class WebhookDelivery(Base):
+    __tablename__ = "webhook_deliveries"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    event_id: Mapped[str] = mapped_column(String(150), index=True)
+    payment_id: Mapped[str] = mapped_column(String(100), index=True)
+    status: Mapped[str] = mapped_column(String(20), index=True)
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+
 class LedgerEntry(Base):
     __tablename__ = "ledger_entries"
 

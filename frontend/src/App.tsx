@@ -278,12 +278,14 @@ export default function App() {
     mandates: AnyRow[]
     payments: AnyRow[]
     events: AnyRow[]
+    deliveries: AnyRow[]
     attempts: AnyRow[]
     ledger: AnyRow[]
   }>({
     mandates: [],
     payments: [],
     events: [],
+    deliveries: [],
     attempts: [],
     ledger: [],
   })
@@ -328,6 +330,7 @@ export default function App() {
       'mandates',
       'payments',
       'events',
+      'deliveries',
       'attempts',
       'ledger',
     ] as const
@@ -490,7 +493,7 @@ export default function App() {
       setSelected(null)
       setDetail(null)
       await refresh()
-      notify('Demo data and queued events cleared')
+      notify('Demo data, delivery history, and queued events cleared')
     } catch (e: any) {
       notify(e.message || 'Could not reset demo data', true)
     } finally {
@@ -1169,7 +1172,7 @@ export default function App() {
                 }
               >
                 <div className="notice">
-                  This permanently removes mandates, payment attempts, webhook events, ledger entries, and pending Redis stream events. It does not delete the Render database or reset process metrics.
+                  This permanently removes mandates, payment attempts, webhook events and delivery history, ledger entries, and pending Redis stream events. It does not delete the Render database or reset process metrics.
                 </div>
               </Panel>
             </>
@@ -1418,7 +1421,7 @@ export default function App() {
                             marginTop: 8,
                           }}
                         >
-                          One event record ·{' '}
+                          {scenario.replies.length} deliveries · one event record ·{' '}
                           {currentAttempts.length || 0}{' '}
                           attempts ·{' '}
                           {currentLedger.length || 0}{' '}
@@ -1507,7 +1510,7 @@ export default function App() {
             <>
               <Head
                 title="Webhook events"
-                subtitle="Persisted event records reveal accepted, processed, ignored, and duplicate delivery behavior."
+                subtitle="See unique payment events separately from every webhook delivery, including duplicates."
               />
 
               <Panel
@@ -1544,7 +1547,6 @@ export default function App() {
                       <option>All</option>
                       <option>Processed</option>
                       <option>Ignored</option>
-                      <option>Duplicate</option>
                       <option>Received</option>
                     </select>
                   </div>
@@ -1602,6 +1604,44 @@ export default function App() {
                     setSelected({
                       payment_id: r.payment_id,
                     })
+                  }
+                />
+              </Panel>
+
+              <Panel
+                title="Webhook delivery history"
+                caption={`${data.deliveries.length} deliveries · duplicate requests are recorded here, not in the ledger`}
+              >
+                <DataTable
+                  cols={[
+                    {
+                      name: 'Event ID',
+                      key: 'event_id',
+                      render: (r) => (
+                        <span className="mono">{r.event_id}</span>
+                      ),
+                    },
+                    {
+                      name: 'Payment ID',
+                      key: 'payment_id',
+                      render: (r) => (
+                        <span className="mono">{r.payment_id}</span>
+                      ),
+                    },
+                    {
+                      name: 'Delivery result',
+                      key: 'status',
+                      render: (r) => <Badge value={r.status} />,
+                    },
+                    {
+                      name: 'Received at',
+                      key: 'received_at',
+                      render: (r) => fmtDate(r.received_at),
+                    },
+                  ]}
+                  rows={data.deliveries}
+                  onRow={(r) =>
+                    setSelected({ payment_id: r.payment_id })
                   }
                 />
               </Panel>

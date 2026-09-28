@@ -81,7 +81,9 @@ The dashboard header reports API, PostgreSQL, Redis, and worker metrics endpoint
 
 The dashboard refreshes data every four seconds. The failure-and-retry scenario takes about 10 seconds for the retry to become due, plus up to one refresh interval.
 
-The **Overview** page includes a **Reset data** control. It clears demo records and queued Redis stream events while keeping the Render resources. On Render, open `paymentops-api` → **Environment** and copy the `RESET_TOKEN` value when prompted. The control also requires typing `RESET` as confirmation.
+The **Overview** page includes a **Reset data** control. It clears demo records, webhook delivery history, and queued Redis stream events while keeping the Render resources. On Render, open `paymentops-api` → **Environment** and copy the `RESET_TOKEN` value when prompted. The control also requires typing `RESET` as confirmation.
+
+On **Events**, the event log shows one persisted record per unique event ID. The webhook delivery history below it records every request as `ACCEPTED` or `DUPLICATE`, so duplicate deliveries remain visible without appearing as ledger entries.
 
 ## Deploy to Render
 
