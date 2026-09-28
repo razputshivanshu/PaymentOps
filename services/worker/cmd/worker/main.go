@@ -19,9 +19,11 @@ import (
 )
 
 const (
-	streamName    = "payment_events"
-	consumerGroup = "payment_workers"
-	consumerName  = "worker-1"
+	streamName                = "payment_events"
+	consumerGroup             = "payment_workers"
+	consumerName              = "worker-1"
+	metricsResetGenerationKey = "paymentops:metrics_reset_generation"
+	metricsResetAckKey        = "paymentops:metrics_reset_ack"
 
 	// Demo retry delay.
 	// In production this would normally use exponential backoff.
@@ -117,6 +119,14 @@ func main() {
 		log.Fatalf("failed to create consumer group: %v", err)
 	}
 
+	metricsResetGeneration, err := rdb.Get(ctx, metricsResetGenerationKey).Int64()
+	if err != nil && err != redis.Nil {
+		log.Fatalf("failed to read metrics reset generation: %v", err)
+	}
+	if err := rdb.Set(ctx, metricsResetAckKey, metricsResetGeneration, 0).Err(); err != nil {
+		log.Fatalf("failed to initialize metrics reset acknowledgement: %v", err)
+	}
+
 	log.Printf(
 		"Listening to stream=%s group=%s consumer=%s",
 		streamName,
@@ -129,6 +139,12 @@ func main() {
 	recoverPendingMessages(ctx, rdb, db)
 
 	for {
+		metricsResetGeneration = resetMetricsIfRequested(
+			ctx,
+			rdb,
+			metricsResetGeneration,
+		)
+
 		// Recover any pending messages that have become
 		// reclaimable.
 		recoverPendingMessages(ctx, rdb, db)
@@ -160,10 +176,34 @@ func main() {
 
 		for _, stream := range streams {
 			for _, message := range stream.Messages {
+				metricsResetGeneration = resetMetricsIfRequested(
+					ctx,
+					rdb,
+					metricsResetGeneration,
+				)
 				processMessage(ctx, rdb, db, message)
 			}
 		}
 	}
+}
+
+func resetMetricsIfRequested(
+	ctx context.Context,
+	rdb *redis.Client,
+	currentGeneration int64,
+) int64 {
+	generation, err := rdb.Get(ctx, metricsResetGenerationKey).Int64()
+	if err != nil || generation <= currentGeneration {
+		return currentGeneration
+	}
+
+	metrics.Reset()
+	if err := rdb.Set(ctx, metricsResetAckKey, generation, 0).Err(); err != nil {
+		log.Printf("failed to acknowledge metrics reset: %v", err)
+		return currentGeneration
+	}
+	log.Printf("Reset worker metrics at generation %d", generation)
+	return generation
 }
 
 // ============================================================
@@ -246,7 +286,7 @@ func processMessage(
 	}
 
 	// The payment event was successfully handled by the worker.
-	metrics.PaymentEventsProcessed.Inc()
+	metrics.PaymentEventsProcessed.WithLabelValues("current").Inc()
 
 	log.Printf(
 		"Payment processed: %v",
@@ -503,7 +543,7 @@ func processPayment(
 		}
 
 		// The failed attempt is now durably stored.
-		metrics.PaymentFailures.Inc()
+		metrics.PaymentFailures.WithLabelValues("current").Inc()
 
 		log.Printf(
 			"Payment failed: payment_id=%s. "+
@@ -638,7 +678,7 @@ func processPayment(
 	}
 
 	// Only increment after the financial transaction commits.
-	metrics.LedgerEntriesCreated.Inc()
+	metrics.LedgerEntriesCreated.WithLabelValues("current").Inc()
 
 	return nil
 }
@@ -970,8 +1010,8 @@ func executeRetry(
 	}
 
 	// Only count the retry after the retry transaction commits.
-	metrics.PaymentRetries.Inc()
-	metrics.LedgerEntriesCreated.Inc()
+	metrics.PaymentRetries.WithLabelValues("current").Inc()
+	metrics.LedgerEntriesCreated.WithLabelValues("current").Inc()
 
 	log.Printf(
 		"Retry successful: payment_id=%s attempt=%d",

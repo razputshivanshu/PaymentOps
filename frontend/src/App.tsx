@@ -400,7 +400,11 @@ export default function App() {
       for (const metric of metricNames) {
         const line = allText
           .split('\n')
-          .find((l) => l.startsWith(`${metric} `))
+          .find(
+            (l) =>
+              l.startsWith(`${metric} `) ||
+              l.startsWith(`${metric}{`),
+          )
 
         if (line) {
           const parts = line.split(/\s+/)
@@ -483,7 +487,9 @@ export default function App() {
     ev.preventDefault()
     setResetting(true)
     try {
-      await api('/admin/reset', {
+      const result = await api<{
+        worker_metrics_reset: boolean
+      }>('/admin/reset', {
         method: 'POST',
         headers: { 'X-Reset-Token': resetToken },
       })
@@ -492,8 +498,13 @@ export default function App() {
       setResetConfirmation('')
       setSelected(null)
       setDetail(null)
+      setScenario(null)
       await refresh()
-      notify('Demo data, delivery history, and queued events cleared')
+      notify(
+        result.worker_metrics_reset
+          ? 'Demo data and API/worker metrics reset'
+          : 'Data and API metrics reset; worker metrics reset is pending',
+      )
     } catch (e: any) {
       notify(e.message || 'Could not reset demo data', true)
     } finally {
@@ -1172,7 +1183,7 @@ export default function App() {
                 }
               >
                 <div className="notice">
-                  This permanently removes mandates, payment attempts, webhook events and delivery history, ledger entries, and pending Redis stream events. It does not delete the Render database or reset process metrics.
+                  This clears mandates, attempts, webhook events and deliveries, ledger entries, queued Redis events, and API/worker metric counters. It keeps the Render resources and static reliability descriptions.
                 </div>
               </Panel>
             </>

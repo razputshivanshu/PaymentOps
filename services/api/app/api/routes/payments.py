@@ -31,7 +31,7 @@ async def payment_webhook(
     db: AsyncSession = Depends(get_db),
 ):
     # Count every webhook request received.
-    payment_webhooks_total.inc()
+    payment_webhooks_total.labels("current").inc()
 
     # Check whether this webhook event was already received.
     result = await db.execute(
@@ -52,7 +52,7 @@ async def payment_webhook(
             )
         )
         await db.commit()
-        payment_webhooks_duplicates_total.inc()
+        payment_webhooks_duplicates_total.labels("current").inc()
 
         return {
             "status": "duplicate",
@@ -103,7 +103,7 @@ async def payment_webhook(
         )
         await db.commit()
 
-        payment_webhooks_duplicates_total.inc()
+        payment_webhooks_duplicates_total.labels("current").inc()
 
         return {
             "status": "duplicate",
@@ -112,7 +112,7 @@ async def payment_webhook(
         }
 
     # The event was successfully persisted.
-    payment_webhooks_accepted_total.inc()
+    payment_webhooks_accepted_total.labels("current").inc()
 
     await db.refresh(event)
 

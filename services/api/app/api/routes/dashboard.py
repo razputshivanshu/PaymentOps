@@ -1,3 +1,4 @@
+import asyncio
 import hmac
 import os
 
@@ -6,6 +7,7 @@ from sqlalchemy import desc, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import AsyncSessionLocal, engine
+from app.metrics import reset_demo_metrics
 from app.models import (
     LedgerEntry,
     Mandate,
@@ -107,7 +109,20 @@ async def reset_demo_data(
         )
 
     await redis_client.xtrim(PAYMENT_STREAM, maxlen=0, approximate=False)
+    reset_demo_metrics()
+
+    generation = await redis_client.incr("paymentops:metrics_reset_generation")
+    worker_metrics_reset = False
+    for _ in range(50):
+        acknowledged = await redis_client.get("paymentops:metrics_reset_ack")
+        if acknowledged is not None and int(acknowledged) >= generation:
+            worker_metrics_reset = True
+            break
+        await asyncio.sleep(0.2)
+
     return {
         "status": "ok",
         "message": "Demo data, webhook deliveries, and queued events cleared",
+        "api_metrics_reset": True,
+        "worker_metrics_reset": worker_metrics_reset,
     }
