@@ -2239,9 +2239,9 @@ function PaymentOpsPage({
   return (
     <>
       <Head
-        eyebrow="BUILT IN 2 DAYS · INDEPENDENT ENGINEERING DEMO"
-        title="Why I chose to build this"
-        subtitle="A real problem caught my attention. I chose a smaller slice, built it in 2 days, and made the engineering decisions visible."
+        eyebrow="PAYMENT RELIABILITY · INDEPENDENT DEMO"
+        title="How this payment operations demo works"
+        subtitle="Follow a simulated recurring payment from webhook delivery through background processing to its recorded financial result."
         right={
           <a
             className="btn"
@@ -2257,166 +2257,33 @@ function PaymentOpsPage({
       />
 
       <Panel
-        title="The story behind the project"
-        caption="Why I chose to build instead of only describing an idea"
+        title="What the application does"
+        caption="A small system for seeing how recurring payment events are handled safely"
       >
-        <div className="story-copy">
-
-          <p>
-            <strong>
-              I wanted to introduce myself by building
-              something, rather than only sending a resume.
-            </strong>
-          </p>
-
-          <p>
-            While exploring Aura Gold and the engineering
-            problems around recurring payments, I came
-            across the Cashfree case study{' '}
-            <strong>
-              “How Aura Gold Scaled Recurring Investments
-              While Maintaining 90+% Success Rate.”
-            </strong>
-          </p>
-
-          <p>
-            What caught my attention wasn't just the scale.
-            It was the engineering problem underneath it:
-            recurring payments have to remain reliable even
-            when mandates change, events are delivered more
-            than once, payments fail, or processing is
-            interrupted.
-          </p>
-
-          <p>
-            That led me to a question I could actually
-            explore myself:
-          </p>
-
-          <blockquote>
-            What happens when the same payment event arrives
-            twice, a payment fails, or a worker disappears in
-            the middle of processing?
-          </blockquote>
-
-          <p>
-            I deliberately kept the scope small and focused
-            on one reliability slice. I built an independent
-            recurring-payment orchestration system with{' '}
-            <strong>
-              webhook idempotency, payment-level
-              idempotency, retries, worker recovery,
-              transactional ledger updates, Redis Streams,
-              and observability.
-            </strong>
-          </p>
-
-          <p>
-            <strong>
-              I built and tested this in 2 days.
-            </strong>{' '}
-            The goal wasn't to recreate a production payment
-            platform. It was to take a real domain problem,
-            understand it from first principles, make sensible
-            engineering trade-offs, and turn the idea into a
-            working system that I could actually demonstrate.
-          </p>
-
-          <p>
-            I also came across your post about the{' '}
-            <strong>SDE Intern opportunity at Aura Gold</strong>,
-            where you mentioned that you value people who
-            have actually built things, broken things, fixed
-            them, and can explain why they made their technical
-            decisions.
-          </p>
-
-          <p>
-            That resonated with me. I don't come from a
-            traditional product-based company background.
-            What I do have is a{' '}
-            <strong>builder mindset</strong> — taking a
-            problem from fundamentals, understanding the
-            pieces, and pushing it from a basic idea toward a
-            working system.
-          </p>
-
-          <p>
-            From the beginning, I've wanted to work in a{' '}
-            <strong>startup environment</strong> where I can
-            take ownership, learn quickly, work close to the
-            problem, and contribute beyond a narrowly defined
-            task.
-          </p>
-
-          <p>
-            I'm currently looking for a{' '}
-            <strong>
-              full-time software engineering opportunity
-            </strong>
-            , rather than an internship. So instead of
-            sending you another resume and asking you to judge
-            what I might be able to build, I thought I'd show
-            you something I actually built.
-          </p>
-
-          <p>
-            <strong>
-              I know your time as a CTO is valuable, so I
-              wanted this project to do some of the talking
-              for me.
-            </strong>
-          </p>
-
-          <p>
-            This is a small demonstration of how I approach
-            problems, make engineering decisions, debug
-            failures, and turn an idea into a working system.
-          </p>
-
+        <p>
+          A simulated payment provider sends a webhook to the API. The API records the event and its delivery, then queues new events for a background worker. The worker records each payment attempt and, only on success, writes the financial effect to the ledger in PostgreSQL.
+        </p>
+        <div className="intro-feature">
+          <span className="kpi-icon"><Activity size={15} /></span>
+          <div><strong>1. Receive and check</strong><p>The API checks the event ID. A repeated delivery is marked duplicate and is not queued for processing again.</p></div>
         </div>
-
-        <div className="source-card">
-          <div>
-            <strong>
-              Source that inspired the problem
-            </strong>
-
-            <span>
-              Cashfree × Aura Gold case study
-            </span>
-          </div>
-
-          <a
-            href="https://www.cashfree.com/case-study/how-aura-gold-scaled-recurring-investments-while-maintaining-90-success-rate/?utm_source=chatgpt.com"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Read the case study{' '}
-            <ArrowUpRight size={13} />
-          </a>
+        <div className="intro-feature">
+          <span className="kpi-icon"><Server size={15} /></span>
+          <div><strong>2. Queue and process</strong><p>New events go through Redis Streams to a Go worker, which simulates the provider result and records payment attempts.</p></div>
         </div>
-
-        <div
-          className="notice"
-          style={{ marginTop: 12 }}
-        >
-          <strong>
-            Independent engineering demo:
-          </strong>{' '}
-          This project is inspired by publicly documented
-          recurring-payment reliability challenges. It is{' '}
-          <strong>
-            not Aura Gold's production system, architecture,
-            or internal implementation.
-          </strong>
+        <div className="intro-feature">
+          <span className="kpi-icon"><ShieldCheck size={15} /></span>
+          <div><strong>3. Record and inspect</strong><p>Successful payment attempts and their ledger effects are saved together in a PostgreSQL transaction. The dashboard shows events, attempts, ledger entries, health, and metrics.</p></div>
+        </div>
+        <div className="notice" style={{ marginTop: 12 }}>
+          <strong>Demo only:</strong> The payment provider is simulated. No real payment is sent. This is an independent engineering project, not Aura Gold's production system or internal implementation.
         </div>
       </Panel>
 
       <div style={{ marginTop: 15 }}>
         <Panel
           title="What I built"
-          caption="From problem → design → implementation → observable system"
+          caption="Use these scenarios to inspect the processing behavior"
         >
           <div className="intro-feature">
             <span className="kpi-icon">
@@ -2449,9 +2316,9 @@ function PaymentOpsPage({
 
               <p>
                 Inspect mandates, events, attempts, ledger
-                entries, health, and metrics. Trigger
-                success, duplicate, and failure-with-retry
-                scenarios.
+                entries, health, and metrics. Trigger a
+                successful payment, a repeated webhook
+                delivery, or a failure followed by retry.
               </p>
             </div>
           </div>
@@ -2467,9 +2334,10 @@ function PaymentOpsPage({
               </strong>
 
               <p>
-                See event idempotency, payment-level
-                financial protection, delayed retry, and
-                Redis pending-message recovery behavior.
+                A repeated event delivery should not create a
+                second attempt or ledger effect. Failures can
+                be retried, and interrupted worker messages
+                can be recovered.
               </p>
             </div>
           </div>
