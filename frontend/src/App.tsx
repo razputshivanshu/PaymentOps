@@ -2239,9 +2239,9 @@ function PaymentOpsPage({
   return (
     <>
       <Head
-        eyebrow="PAYMENT RELIABILITY · INDEPENDENT DEMO"
-        title="How this payment operations demo works"
-        subtitle="Follow a simulated recurring payment from webhook delivery through background processing to its recorded financial result."
+        eyebrow="BUILT IN 2 DAYS · INDEPENDENT ENGINEERING DEMO"
+        title="A project I built to show how I think"
+        subtitle="I’m looking for a full-time software engineering opportunity. I wanted to introduce myself through a working demo, then make the engineering behind it easy to explore."
         right={
           <a
             className="btn"
@@ -2255,6 +2255,39 @@ function PaymentOpsPage({
           </a>
         }
       />
+
+      <Panel
+        title="Why I chose to build this"
+        caption="A personal introduction and the problem that inspired the project"
+      >
+        <div className="story-copy">
+          <p>
+            I wanted to approach this differently than simply sending a resume. While exploring recurring payment systems, I came across the Cashfree × Aura Gold case study about scaling recurring investments while maintaining a high payment success rate.
+          </p>
+          <p>
+            It made me curious about a smaller engineering problem: what happens when a payment event arrives more than once, a payment fails, or a worker stops in the middle of processing?
+          </p>
+          <p>
+            I built this independent demo in two days to explore that problem through webhook idempotency, retries, worker recovery, transactional ledger updates, and observability. I wanted to understand the domain, make the trade-offs visible, and turn the idea into something people can try.
+          </p>
+          <p>
+            I’m looking for a full-time role in a startup environment where I can build, take ownership, learn quickly, and contribute to real problems. I thought showing a working project would be a more useful introduction than asking someone to take my resume at face value.
+          </p>
+        </div>
+        <div className="source-card">
+          <div>
+            <strong>Source that inspired the problem</strong>
+            <span>Cashfree × Aura Gold case study</span>
+          </div>
+          <a
+            href="https://www.cashfree.com/case-study/how-aura-gold-scaled-recurring-investments-while-maintaining-90-success-rate/?utm_source=chatgpt.com"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Read the case study <ArrowUpRight size={13} />
+          </a>
+        </div>
+      </Panel>
 
       <Panel
         title="What the application does"
